@@ -154,11 +154,53 @@ class MySpider(CrawlSpider):
 
 
     def parse_ViewAbstract_pg(self, response):
-        resp_contents = response.xpath('//table[@cellpadding=3]').extract()
-        print
-        print response.url
-        print resp_contents 
-        print
+        # resp_contents = response.xpath('//table[@cellpadding=3]').extract()
+        # print
+        # print response.url
+        # print resp_contents 
+        # print
+
+        try:
+            table_rows = response.xpath('//table[@cellpadding=3]/tr')#.extract()
+
+            all_text = []
+            for tr in table_rows:
+                tds = tr.xpath('.//td').xpath('.//text()').extract()
+                if tds:
+                    cleaned_txt = []
+                    for td in tds:
+                        td = td.strip()
+                        td = td.replace('\n', '')
+                        if td:
+                            cleaned_txt.append(td)
+                    all_text.append(cleaned_txt)
+
+            cleaned_all_text = []
+            for cnt, l in enumerate(all_text):
+                if len(l) > 1:
+                    cleaned_all_text.append([l[0], ' '.join(l[1:])])
+                else:
+                    if (cnt == 0) and (l[0] == 'This presenter will not attend'):
+                        cleaned_all_text.append([u'NOTE:', l[0]])
+                    else:
+                        cleaned_all_text[-1][-1] += '; ' + l[0]
+
+            d = dict(cleaned_all_text)
+            # print d
+            # print
+        except:
+            print
+            print "########################################"
+            print "########################################"
+            print "FAILURE at:"
+            print response.url
+            print "########################################"
+            print "########################################"
+            print
+            # this is not thread safe, but it doesn't really matter here
+            with open('./failures.txt', 'w') as f:
+                f.write("FAILURE at:\n{}".format(response.url))
+
 
 
 process = CrawlerProcess()
