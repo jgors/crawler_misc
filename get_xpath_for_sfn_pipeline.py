@@ -26,10 +26,12 @@ for tr in table_rows:
 cleaned_all_text = []
 for cnt, l in enumerate(all_text):
     if len(l) > 1:
+        if l[0].endswith(':'):
+            l[0] = l[0][:-1]
         cleaned_all_text.append([l[0], ' '.join(l[1:])])
     else:
         if (cnt == 0) and (l[0] == 'This presenter will not attend'):
-            cleaned_all_text.append([u'NOTE:', l[0]])
+            cleaned_all_text.append([u'NOTE', l[0]])
         else:
             cleaned_all_text[-1][-1] += '; ' + l[0]
 

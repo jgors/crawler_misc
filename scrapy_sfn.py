@@ -5,7 +5,8 @@
 # Creation Date: 10-04-2015
 # Purpose:
 #----------------------------------------------------------------
-
+import os
+import json
 import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.spiders import CrawlSpider, Rule
@@ -13,6 +14,10 @@ from scrapy.linkextractors import LinkExtractor
 
 
 url = 'http://www.abstractsonline.com/plan/start.aspx?mkey={D0FF4555-8574-4FBB-B9D4-04EEC8BA0C84}'
+
+output_dir = './output'
+if not os.path.isdir(output_dir):
+    os.mkdir(output_dir)
 
 
 # class MySpider(scrapy.Spider):
@@ -141,10 +146,15 @@ class MySpider(CrawlSpider):
                # callback='parse_item'),
 
         Rule(LinkExtractor(allow=('Browse\.aspx', ))),
-        # Rule(LinkExtractor(allow=('BrowseResults\.aspx', ))),     # gives back too many links, need date
+
         Rule(LinkExtractor(allow=('BrowseResults\.aspx\?date\=', ))),
+        # Rule(LinkExtractor(allow=('BrowseResults\.aspx\?date\=10/17/2015', ))),
+
         Rule(LinkExtractor(allow=('ViewSession\.aspx\?', ))),
+        # Rule(LinkExtractor(allow=('ViewSession\.aspx\?sKey\=6766b156-7f22-44eb-866e-b67953137129', ))),
+
         Rule(LinkExtractor(allow=('ViewAbstract\.aspx\?mID\=', )), callback='parse_ViewAbstract_pg'),
+        # NOTE:
         # Can use `process_links` and/or ` process_request` to filter responses and/or requests inside 
         # each Rule for more flexability, and probably `cb_kwargs` to pass the data around.  
         # Also there are many arguments that can be give to LinkExtractor for parsing (lxml):
@@ -154,11 +164,7 @@ class MySpider(CrawlSpider):
 
 
     def parse_ViewAbstract_pg(self, response):
-        # resp_contents = response.xpath('//table[@cellpadding=3]').extract()
-        # print
-        # print response.url
-        # print resp_contents 
-        # print
+        output = {'url': response.url}
 
         try:
             table_rows = response.xpath('//table[@cellpadding=3]/tr')#.extract()
@@ -178,16 +184,20 @@ class MySpider(CrawlSpider):
             cleaned_all_text = []
             for cnt, l in enumerate(all_text):
                 if len(l) > 1:
+                    if l[0].endswith(':'):
+                        l[0] = l[0][:-1]
                     cleaned_all_text.append([l[0], ' '.join(l[1:])])
                 else:
                     if (cnt == 0) and (l[0] == 'This presenter will not attend'):
-                        cleaned_all_text.append([u'NOTE:', l[0]])
+                        cleaned_all_text.append([u'NOTE', l[0]])
                     else:
                         cleaned_all_text[-1][-1] += '; ' + l[0]
 
             d = dict(cleaned_all_text)
-            # print d
+            output.update(d)
+            # print output
             # print
+
         except:
             print
             print "########################################"
@@ -201,6 +211,10 @@ class MySpider(CrawlSpider):
             with open('./failures.txt', 'w') as f:
                 f.write("FAILURE at:\n{}".format(response.url))
 
+        fname = response.url.split('?')[-1].replace('&', '_')
+        output_fname = '{}/{}'.format(output_dir, fname)
+        with open(output_fname, 'w') as f:
+            json.dump(output, f)
 
 
 process = CrawlerProcess()
