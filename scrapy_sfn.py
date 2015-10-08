@@ -208,8 +208,15 @@ class MySpider(CrawlSpider):
             print "########################################"
             print
             # this is not thread safe, but it doesn't really matter here
-            with open('./failures.txt', 'w') as f:
-                f.write("FAILURE at:\n{}".format(response.url))
+            failures_fname = './failures.txt'
+            if not os.path.isfile(failures_fname):
+                mode = 'w'
+                s = "FAILURES at:\n{}".format(response.url)
+            else:
+                mode = 'a'
+                s = "\n{}".format(response.url)
+            with open(failures_fname, mode) as f:
+                f.write(s)
 
         fname = response.url.split('?')[-1].replace('&', '_')
         output_fname = '{}/{}'.format(output_dir, fname)
