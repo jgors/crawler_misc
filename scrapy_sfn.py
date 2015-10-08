@@ -221,7 +221,7 @@ class MySpider(CrawlSpider):
         fname = response.url.split('?')[-1].replace('&', '_')
         output_fname = '{}/{}'.format(output_dir, fname)
         with open(output_fname, 'w') as f:
-            json.dump(output, f)
+            json.dump(output, f, indent=1)
 
 
 process = CrawlerProcess()
